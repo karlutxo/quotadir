@@ -1,9 +1,31 @@
 # -*- coding: utf-8 -*-
 import os
+import time
+
+def translate_size(size):
+    if size.isdigit():
+        size_in_bytes = int(size)
+    else:
+        if size.endswith('K'):
+            size_in_bytes = int(size.replace('K','')) * 1024
+        if size.endswith('KB'):
+            size_in_bytes = int(size.replace('KB','')) * 1024
+        if size.endswith('M'):
+            size_in_bytes = int(size.replace('M', '')) * 1024 * 1024
+        if size.endswith('MB'):
+            size_in_bytes = int(size.replace('MB', '')) * 1024 * 1024
+        if size.endswith('G'):
+            size_in_bytes = int(size.replace('G', '')) * 1024 * 1024 * 1024
+        if size.endswith('GB'):
+            size_in_bytes = int(size.replace('GB', '')) * 1024 * 1024 * 1024
+        if size.endswith('T'):
+            size_in_bytes = int(size.replace('T', '')) * 1024 * 1024 * 1024 * 1024
+        if size.endswith('TB'):
+            size_in_bytes = int(size.replace('TB', '')) * 1024 * 1024 * 1024 * 1024
+    return size_in_bytes
 
 
 def get_size(start_path = '.'):
-    print 'get_size: start_paht=' , start_path
     total_size = 0
     for dirpath, dirnames, filenames in os.walk(start_path):
         for f in filenames:
@@ -37,22 +59,21 @@ def main(argv):
 if __name__ == "__main__":
    main(sys.argv[1:])
 print 'dir is ', dir
-print 'max_size is ', max_size, type(max_size)
+print 'max_size is ', max_size, '   ', translate_size(max_size), ' bytes'
 
 current_size = int(get_size(dir))
-print 'current size is ' , current_size, type(dir)
-if int(current_size) > int(max_size):
+print 'current size is ' , current_size
+if current_size > translate_size(max_size):
 #if 10 > 9:
         print 'hay que borrar'
 else:
     print 'no hay que borrar'
 
-print '1 ',os.listdir('/vl/vm/')
-#all_subdirs = [d for d in os.listdir('/vl/vm/') if os.path.isdir(d)]
-all_subdirs = [d for d in os.listdir('/vl/vm/')]
-
+all_subdirs = [os.path.join(dir, d) for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
 
 print 'subdirs ', all_subdirs
-#oldest_subdir = min(all_subdirs, key=os.path.getmtime)
-#print 'oldest_subdir' , oldest_subdir
-print 'all_subdir' , all_subdirs
+oldest_subdir = min(all_subdirs, key=os.path.getmtime)
+print 'oldest_subdir' , oldest_subdir
+
+for h in all_subdirs:
+    print h, '  ', get_size(h), '  ', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.stat(h).st_mtime))
