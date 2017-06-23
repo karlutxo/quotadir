@@ -2,6 +2,7 @@
 import os
 import time
 import shutil
+import sys, argparse
 
 
 def translate_size(size):
@@ -35,49 +36,42 @@ def get_size(start_path = '.'):
             total_size += os.path.getsize(fp)
     return total_size
 
-import sys, getopt
 
 dir = ''
 max_size = 1073741824  # 1 GB
 
 
-def main(argv):
-   global dir
-   global max_size
-   global verbose
+verbose = False
+force = False
 
+parser = argparse.ArgumentParser(description='Caps the size of a directory by means of deleting the older subdirs',epilog='v. 1.0 Jun17 by Carlos Jimenez')
+parser.add_argument("path", help="path of the directory to check")
+parser.add_argument("size", help="Size of the quota. Use KB, MB, GB or TB")
+parser.add_argument("-v", "--verbose", help="increase output verbosity",  action="store_true")
+parser.add_argument("-f", "--force", help="do not prompt before deleting",  action="store_true")
+args = parser.parse_args()
+
+if args.verbose:
    verbose = True
-   try:
-      opts, args = getopt.getopt(argv,"hd:s:",["dir=","size="])
-   except getopt.GetoptError:
-      print 'quota.py -d <dir> -s <size'
-      sys.exit(2)
-   for opt, arg in opts:
-      if opt == '-h':
-         print 'quota.py -d <dir> -s <size>'
-         sys.exit()
-      elif opt in ("-d", "--dir"):
-         dir = arg
-      elif opt in ("-s", "--size"):
-         max_size = arg
-#      elif opt in ("-v", "--verbose"):
-#         verbose = True
 
-if __name__ == "__main__":
-   main(sys.argv[1:])
+if args.force:
+   force = True
+
+dir = args.path
+max_size = args.size
 
 current_size = int(get_size(dir))
 print 'checking ', dir,  '  Quota: ', max_size, ' (', translate_size(max_size), ') bytes  ', '  used: ' , current_size
 all_subdirs = [os.path.join(dir, d) for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
 if verbose:
-    for h in all_subdirs:
-        print h, '  ', get_size(h), '  ', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.stat(h).st_mtime))
+   for h in all_subdirs:
+       print h, '  ', get_size(h), '  ', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.stat(h).st_mtime))
 
 while current_size > translate_size(max_size):
-    oldest_subdir = min(all_subdirs, key=os.path.getmtime)
-    print 'deleting ' , oldest_subdir
-    shutil.rmtree(oldest_subdir)
-    current_size = int(get_size(dir))
-    print 'checking ', dir,  '  Quota: ', max_size, ' (', translate_size(max_size), ') bytes  ', '  used: ' , current_size
-    all_subdirs = [os.path.join(dir, d) for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+   oldest_subdir = min(all_subdirs, key=os.path.getmtime)
+   print 'deleting ' , oldest_subdir
+   shutil.rmtree(oldest_subdir)
+   current_size = int(get_size(dir))
+   print 'checking ', dir,  '  Quota: ', max_size, ' (', translate_size(max_size), ') bytes  ', '  used: ' , current_size
+   all_subdirs = [os.path.join(dir, d) for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
 
