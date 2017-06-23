@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import time
+import shutil
+
 
 def translate_size(size):
     if size.isdigit():
@@ -42,6 +44,9 @@ max_size = 1073741824  # 1 GB
 def main(argv):
    global dir
    global max_size
+   global verbose
+
+   verbose = True
    try:
       opts, args = getopt.getopt(argv,"hd:s:",["dir=","size="])
    except getopt.GetoptError:
@@ -55,25 +60,24 @@ def main(argv):
          dir = arg
       elif opt in ("-s", "--size"):
          max_size = arg
+#      elif opt in ("-v", "--verbose"):
+#         verbose = True
 
 if __name__ == "__main__":
    main(sys.argv[1:])
-print 'dir is ', dir
-print 'max_size is ', max_size, '   ', translate_size(max_size), ' bytes'
 
 current_size = int(get_size(dir))
-print 'current size is ' , current_size
-if current_size > translate_size(max_size):
-#if 10 > 9:
-        print 'hay que borrar'
-else:
-    print 'no hay que borrar'
-
+print 'checking ', dir,  '  Quota: ', max_size, ' (', translate_size(max_size), ') bytes  ', '  used: ' , current_size
 all_subdirs = [os.path.join(dir, d) for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+if verbose:
+    for h in all_subdirs:
+        print h, '  ', get_size(h), '  ', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.stat(h).st_mtime))
 
-print 'subdirs ', all_subdirs
-oldest_subdir = min(all_subdirs, key=os.path.getmtime)
-print 'oldest_subdir' , oldest_subdir
+while current_size > translate_size(max_size):
+    oldest_subdir = min(all_subdirs, key=os.path.getmtime)
+    print 'deleting ' , oldest_subdir
+    shutil.rmtree(oldest_subdir)
+    current_size = int(get_size(dir))
+    print 'checking ', dir,  '  Quota: ', max_size, ' (', translate_size(max_size), ') bytes  ', '  used: ' , current_size
+    all_subdirs = [os.path.join(dir, d) for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
 
-for h in all_subdirs:
-    print h, '  ', get_size(h), '  ', time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(os.stat(h).st_mtime))
